@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Following Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="popup.css"/>
+</head>
+<body class="lang-en">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-left">
+      <div class="logo-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      </div>
+      <div>
+        <div class="hdr-title" data-i18n="appName">Following Manager</div>
+        <div class="hdr-acct" id="accountLabel">—</div>
+      </div>
+    </div>
+    <div class="hdr-right">
+      <button class="lang-btn" id="langToggle">EN</button>
+    </div>
+  </header>
+
+  <!-- MODE -->
+  <div class="mode-strip">
+    <button class="mode-btn active" id="modeFollowing">
+      <span class="mode-icon">→</span>
+      <span data-i18n="following">Following</span>
+    </button>
+    <div class="mode-divider"></div>
+    <button class="mode-btn" id="modeFollowers">
+      <span class="mode-icon">←</span>
+      <span data-i18n="followers">Followers</span>
+    </button>
+  </div>
+
+  <!-- NAV TABS -->
+  <nav class="nav">
+    <button class="nav-btn active" data-tab="list">
+      <span class="nav-dot"></span>
+      <span data-i18n="tabList">List</span>
+    </button>
+    <button class="nav-btn" data-tab="insights">
+      <span class="nav-dot"></span>
+      <span data-i18n="tabStats">Stats</span>
+    </button>
+    <button class="nav-btn" data-tab="settings">
+      <span class="nav-dot"></span>
+      <span data-i18n="tabSettings">Settings</span>
+    </button>
+  </nav>
+
+  <main class="main">
+
+    <!-- LIST -->
+    <section id="panel-list" class="panel active">
+
+      <div class="scan-block">
+        <button id="scanBtn" class="scan-btn">
+          <span class="scan-arrow">↻</span>
+          <span id="scanBtnLabel" data-i18n="scanFollowing">Scan following list</span>
+        </button>
+        <div id="scanStatus" class="scan-status"></div>
+      </div>
+
+      <!-- SEGMENTED -->
+      <div class="seg" id="followbackSegment">
+        <button class="seg-btn active" data-mutual="all">
+          <span data-i18n="all">All</span>
+          <span class="seg-count" id="segCountAll">0</span>
+        </button>
+        <button class="seg-btn" data-mutual="only">
+          <span id="segLabelGood" data-i18n="followBack">Follow back</span>
+          <span class="seg-count" id="segCountBack">0</span>
+        </button>
+        <button class="seg-btn" data-mutual="hide">
+          <span id="segLabelBad" data-i18n="noFollowBack">No follow back</span>
+          <span class="seg-count" id="segCountNoBack">0</span>
+        </button>
+      </div>
+
+      <!-- SEARCH -->
+      <div class="search-wrap">
+        <input id="searchInput" type="text" class="search-input" data-i18n-placeholder="searchPlaceholder"/>
+        <button id="filtersToggle" class="search-filter-btn">≡</button>
+      </div>
+
+      <div id="extraFilters" class="filters-panel">
+        <div class="filters-row">
+          <select id="verifiedFilter">
+            <option value="all" data-i18n="filterAll">All</option>
+            <option value="verified" data-i18n="filterVerified">Verified</option>
+            <option value="unverified" data-i18n="filterUnverified">Not verified</option>
+          </select>
+          <select id="inactiveFilter">
+            <option value="all" data-i18n="filterActivity">Activity</option>
+            <option value="30" data-i18n="filter30">Inactive 30+ days</option>
+            <option value="60" data-i18n="filter60">Inactive 60+ days</option>
+            <option value="90" data-i18n="filter90">Inactive 90+ days</option>
+            <option value="never" data-i18n="filterNever">No tweets</option>
+          </select>
+        </div>
+        <input id="maxFollowersInput" type="number" min="0" class="filter-input" data-i18n-placeholder="filterMaxFollowers"/>
+      </div>
+
+      <!-- SELECTION BAR -->
+      <div class="sel-bar">
+        <label class="sel-label"><input type="checkbox" id="selectAllBox"/><span data-i18n="selectAll">All</span></label>
+        <button id="selectNoBackBtn" class="sel-link"><span id="selectNoBackLabel" data-i18n="selectNoBack">No follow back</span></button>
+        <span id="selectedCount" class="sel-num">0</span>
+      </div>
+
+      <!-- USER LIST -->
+      <div id="userList" class="user-list">
+        <div class="empty" id="emptyState">
+          <div class="empty-ring">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <p id="emptyStateText" data-i18n="emptyState"></p>
+        </div>
+      </div>
+
+      <!-- ACTION -->
+      <div class="action-block">
+        <button id="unfollowSelectedBtn" class="action-btn" disabled>
+          <span id="actionBtnLabel" data-i18n="unfollowSelected">Unfollow selected</span>
+        </button>
+        <button id="pauseBtn" class="pause-btn" style="display:none;" data-i18n="pause">Pause</button>
+        <div id="queueStatus" class="queue-info"></div>
+      </div>
+
+    </section>
+
+    <!-- STATS -->
+    <section id="panel-insights" class="panel">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="statTotal">0</div>
+          <div class="stat-lbl" id="statTotalLabel" data-i18n="statTotal">Following</div>
+        </div>
+        <div class="stat-card accent-green">
+          <div class="stat-val" id="statMutual">0</div>
+          <div class="stat-lbl" id="statMutualLabel" data-i18n="statMutual">Follow back</div>
+        </div>
+        <div class="stat-card accent-red">
+          <div class="stat-val" id="statNoBack">0</div>
+          <div class="stat-lbl" id="statNoBackLabel" data-i18n="statNoBack">No follow back</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="statVerified">0%</div>
+          <div class="stat-lbl" data-i18n="statVerified">Verified</div>
+        </div>
+        <div class="stat-card accent-gold">
+          <div class="stat-val" id="statUnfollowed">0</div>
+          <div class="stat-lbl" id="statActionLabel" data-i18n="statUnfollowed">Unfollowed</div>
+        </div>
+      </div>
+      <div class="section-hdr" id="recentTitle" data-i18n="recentActions">Recent actions</div>
+      <div id="recentUnfollows" class="recent-list"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="panel-settings" class="panel">
+      <div class="set-card">
+        <div class="section-hdr" data-i18n="settingsSpeed">Speed & safety</div>
+        <div class="set-field"><label data-i18n="settingsMinDelay">Min delay (sec)</label><input type="number" id="minDelay" min="3" max="120"/></div>
+        <div class="set-field"><label data-i18n="settingsMaxDelay">Max delay (sec)</label><input type="number" id="maxDelay" min="3" max="120"/></div>
+        <div class="set-field"><label data-i18n="settingsDailyCap">Daily limit</label><input type="number" id="dailyCap" min="1" max="400"/></div>
+        <div class="set-field"><label data-i18n="settingsBatchSize">Batch size</label><input type="number" id="batchSize" min="1" max="200"/></div>
+        <div class="set-field"><label data-i18n="settingsBatchPause">Batch pause (min)</label><input type="number" id="batchPauseMin" min="1" max="120"/></div>
+        <div class="set-check">
+          <input type="checkbox" id="protectMutuals"/>
+          <label data-i18n="settingsProtectMutuals">Protect mutual follows</label>
+        </div>
+        <button id="saveSettingsBtn" class="save-btn" data-i18n="saveSettings">Save settings</button>
+      </div>
+      <p class="set-hint" data-i18n="settingsHint">Uses X internal API with random delays.</p>
+    </section>
+
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
