@@ -1,6 +1,6 @@
 # X Following Manager
 
-A Chrome extension to scan, filter, and bulk unfollow accounts on X/Twitter — with API-first approach and built-in safety controls.
+A browser extension to scan, filter, and bulk unfollow accounts on X/Twitter — with API-first approach and built-in safety controls.
 
 ## Features
 
@@ -16,7 +16,7 @@ A Chrome extension to scan, filter, and bulk unfollow accounts on X/Twitter — 
 
 ## Install (Developer / Unpacked Mode)
 
-1. Open `chrome://extensions` in Chrome (or Quetta Browser on Android).
+1. Open `chrome://extensions` in your browser.
 2. Enable **Developer mode** (top-right toggle).
 3. Click **Load unpacked** and select the `x-following-manager` folder.
 4. Pin the extension icon to your toolbar.
