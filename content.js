@@ -3,7 +3,6 @@
 // + friendships/destroy.json (unfollow) + friendships/remove.json (remove follower)
 
 (() => {
-  console.log('[XFM] Content script loaded ✓');
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   const PUBLIC_BEARER =
@@ -48,13 +47,6 @@
   }
 
   function mapUser(u, isFollowers) {
-    // Debug: log first user to see API fields
-    if (!window.__xfm_first_user) {
-      window.__xfm_first_user = u.screen_name;
-      const keys = Object.keys(u).join(', ');
-      console.log('[XFM] User keys:', keys);
-      console.log('[XFM] verified:', u.verified, 'is_blue_verified:', u.is_blue_verified, 'ext_is_blue_verified:', u.ext_is_blue_verified, 'verified_type:', u.verified_type);
-    }
     return {
       handle: u.screen_name,
       name: u.name,
