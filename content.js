@@ -47,11 +47,20 @@
   }
 
   function mapUser(u, isFollowers) {
+    // Detect verified: try multiple field names X has used over the years
+    const verified = !!(
+      u.verified ||
+      u.is_blue_verified ||
+      u.ext_is_blue_verified ||
+      u.has_nft_avatar ||
+      (u.verified_type && u.verified_type !== 'None' && u.verified_type !== 'none') ||
+      (u.badges && u.badges.find && u.badges.find(b => b.id === 'verified_phone_label'))
+    );
     return {
       handle: u.screen_name,
       name: u.name,
       bio: u.description || '',
-      verified: !!(u.verified || u.is_blue_verified || u.ext_is_blue_verified || (u.verified_type && u.verified_type !== 'none')),
+      verified,
       mutual: isFollowers ? !!u.following : !!u.followed_by,
       followersCount: typeof u.followers_count === 'number' ? u.followers_count : null,
       followingCount: typeof u.friends_count === 'number' ? u.friends_count : null,
@@ -81,6 +90,9 @@
     }
 
     // Enrich verified status via friendships/lookup.json (batch of 100)
+    // NOTE: friendships/lookup.json only returns relationship data, NOT user profile fields.
+    // We use it ONLY to upgrade verified=true (never downgrade), in case the initial
+    // scrape missed some verified flags due to API inconsistencies.
     for (let i = 0; i < users.length; i += 100) {
       const batch = users.slice(i, i + 100);
       const handles = batch.map(u => u.handle).join(',');
@@ -90,8 +102,14 @@
         });
         for (const lu of lookups) {
           const target = users.find(u => u.handle === lu.screen_name);
-          if (target) {
-            target.verified = !!(lu.verified || lu.is_blue_verified || lu.ext_is_blue_verified || (lu.verified_type && lu.verified_type !== 'none'));
+          if (target && !target.verified) {
+            const luVerified = !!(
+              lu.verified ||
+              lu.is_blue_verified ||
+              lu.ext_is_blue_verified ||
+              (lu.verified_type && lu.verified_type !== 'None' && lu.verified_type !== 'none')
+            );
+            if (luVerified) target.verified = true; // only upgrade, never downgrade
           }
         }
         if (i + 100 < users.length) await sleep(500 + Math.random() * 500);
@@ -131,6 +149,80 @@
 
   // ---------- DOM strategy (fallback) ----------
 
+  // Robust badge check: X has renamed data-testid / aria-label values several times.
+  // Instead of matching exact strings, we match ANY attribute (data-testid, aria-label,
+  // or nested <title>) that *contains* the word "verified" (case-insensitive). This
+  // survives X renaming e.g. "icon-verified" -> "icon-verified-blue" etc.
+  function hasVerifiedBadge(cell) {
+    // fast path: known/likely testids
+    if (cell.querySelector('[data-testid*="verified" i]')) return true;
+    // any element with an aria-label mentioning "verified" (covers svg/span/div wrappers)
+    const labelled = cell.querySelectorAll('[aria-label]');
+    for (const el of labelled) {
+      const label = el.getAttribute('aria-label') || '';
+      if (/verified/i.test(label)) return true;
+    }
+    // svg <title> text (some renders expose the accessible name via <title> instead of aria-label)
+    const titles = cell.querySelectorAll('svg title');
+    for (const t of titles) {
+      if (/verified/i.test(t.textContent || '')) return true;
+    }
+    return false;
+  }
+
+  // Enrich verified status by reading DOM badges — X API stopped returning verified fields
+  async function enrichVerifiedFromDOM(users, onProgress) {
+    // Build a case-insensitive lookup so API-handle vs DOM-href casing differences
+    // (e.g. "JohnDoe" vs "johndoe") never cause a false "not verified" result.
+    const byHandleLower = new Map();
+    for (const u of users) byHandleLower.set(u.handle.toLowerCase(), u);
+
+    const verifiedHandlesLower = new Set();
+    let lastHeight = 0;
+    let idleRounds = 0;
+    window.scrollTo(0, 0);
+    await sleep(600);
+
+    const scanVisible = () => {
+      for (const cell of getUserCells()) {
+        const linkEl = cell.querySelector('a[role="link"][href^="/"]');
+        if (!linkEl) continue;
+        const href = linkEl.getAttribute('href') || '';
+        const handle = href.replace(/^\//, '').split('/')[0];
+        if (!handle || handle.includes('?')) continue;
+        if (hasVerifiedBadge(cell)) verifiedHandlesLower.add(handle.toLowerCase());
+      }
+    };
+
+    // Scan visible cells first
+    scanVisible();
+    // Scroll to load more users and check their badges
+    while (idleRounds < 12) {
+      window.scrollBy(0, window.innerHeight * 0.85);
+      await sleep(600);
+      scanVisible();
+      const newHeight = document.body.scrollHeight;
+      if (newHeight === lastHeight) idleRounds++;
+      else { idleRounds = 0; lastHeight = newHeight; }
+      onProgress && onProgress(verifiedHandlesLower.size);
+    }
+
+    // Update users (case-insensitive match)
+    let enriched = 0;
+    for (const handleLower of verifiedHandlesLower) {
+      const target = byHandleLower.get(handleLower);
+      if (target && !target.verified) {
+        target.verified = true;
+        enriched++;
+      }
+    }
+    console.log('[XFM] DOM verified enrichment:', enriched, 'users upgraded out of', users.length, 'total,', verifiedHandlesLower.size, 'verified found in DOM');
+    if (verifiedHandlesLower.size === 0) {
+      console.warn('[XFM] No verified badges detected in DOM at all. This usually means X changed its markup — please report this with a screenshot of a verified account\'s profile row HTML.');
+    }
+    return users;
+  }
+
   function getUserCells() {
     return Array.from(document.querySelectorAll('[data-testid="UserCell"]'));
   }
@@ -144,7 +236,7 @@
     const allText = cell.innerText || '';
     const lines = allText.split('\n').map((s) => s.trim()).filter(Boolean);
     const name = lines[0] || handle;
-    const verified = !!cell.querySelector('svg[aria-label="Verified account"], [data-testid="icon-verified"], [data-testid="icon-verified-gold"], [data-testid="icon-verified-government"]');
+    const verified = hasVerifiedBadge(cell);
     const mutual = /Follows you/i.test(allText);
     const handleLineIdx = lines.findIndex((l) => l.replace('@', '') === handle);
     let bio = '';
@@ -263,6 +355,9 @@
             const users = await apiScrapeFollowing(screenName, (count) => {
               chrome.runtime.sendMessage({ type: 'SCRAPE_PROGRESS', count, method: 'api' }).catch(() => {});
             });
+            // Enrich verified from DOM badges (X API no longer returns verified fields)
+            chrome.runtime.sendMessage({ type: 'SCRAPE_PROGRESS', count: users.length, method: 'dom', label: 'Checking verified badges…' }).catch(() => {});
+            await enrichVerifiedFromDOM(users);
             sendResponse({ ok: true, users, method: 'api' });
           } catch (err) {
             console.warn('[XFM] API scrape following failed:', err.message);
@@ -276,6 +371,9 @@
             const users = await apiScrapeFollowers(screenName, (count) => {
               chrome.runtime.sendMessage({ type: 'SCRAPE_PROGRESS', count, method: 'api' }).catch(() => {});
             });
+            // Enrich verified from DOM badges (X API no longer returns verified fields)
+            chrome.runtime.sendMessage({ type: 'SCRAPE_PROGRESS', count: users.length, method: 'dom', label: 'Checking verified badges…' }).catch(() => {});
+            await enrichVerifiedFromDOM(users);
             sendResponse({ ok: true, users, method: 'api' });
           } catch (err) {
             console.warn('[XFM] API scrape followers failed:', err.message);

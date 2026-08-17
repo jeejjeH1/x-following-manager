@@ -6,7 +6,8 @@ A browser extension to scan, filter, and bulk unfollow accounts on X/Twitter —
 
 - **API-first scraping** — uses X's internal API (`friends/list.json`, `followers/list.json`) for fast, reliable data collection
 - **Follower management** — scan and remove followers who don't follow you back
-- **Smart filtering** — search by name/handle/bio, filter by verified status, activity, follower count
+- **Smart filtering** — search by name/handle/bio, filter by follow-back status, verified/blue tick status, activity, follower count
+- **Verified/Blue tick detection** — uses GraphQL API to accurately detect verified accounts (blue, gold, government badges)
 - **Follow-back detection** — instantly see who follows you back and who doesn't
 - **Batch unfollow/remove** — with random delays, daily caps, and batch pauses to avoid rate limits
 - **Mutual follow protection** — skips accounts that follow you back (toggle on/off)
@@ -27,8 +28,9 @@ A browser extension to scan, filter, and bulk unfollow accounts on X/Twitter —
 1. Navigate to `https://x.com/YOUR_HANDLE/following` (must be logged in).
 2. Click the extension icon and press **Scan following list**.
 3. Use the segmented filter to show: All / Follow back / No follow back.
-4. Select accounts to unfollow using checkboxes (or use "No follow back" quick select).
-5. Click **Unfollow selected** and confirm.
+4. Use the verified filter to show: All / Verified ✓ / Not verified.
+5. Select accounts to unfollow using checkboxes (or use "No follow back" quick select).
+6. Click **Unfollow selected** and confirm.
 
 ### Remove Followers
 1. Navigate to `https://x.com/YOUR_HANDLE/followers`.
@@ -49,6 +51,7 @@ The extension uses X's internal API endpoints — the same ones the website call
 | `POST /1.1/friendships/remove.json` | Remove a follower |
 | `POST /1.1/blocks/create.json` | Block (fallback for remove) |
 | `POST /1.1/blocks/destroy.json` | Unblock (fallback) |
+| `GET /i/api/graphql/.../UserByScreenName` | Verify blue tick status via GraphQL |
 
 Uses your existing session cookies (`ct0` CSRF token + bearer token) — no passwords or OAuth required.
 
@@ -76,7 +79,7 @@ All settings are configurable in the Settings tab.
 
 - Chrome Extension Manifest V3
 - Pure vanilla JS (no frameworks, no dependencies)
-- X internal REST API
+- X internal REST API + GraphQL API
 - Service Worker (background.js) for queue processing
 
 ## Disclaimer

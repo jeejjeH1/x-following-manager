@@ -12,6 +12,7 @@ const i18n = {
     youFollowBack: 'You follow back', youDontFollow: "You don't follow",
     searchPlaceholder: 'Search name, handle, bio…',
     filterAll: 'All', filterVerified: 'Verified', filterUnverified: 'Not verified',
+    verifiedBlue: 'Verified ✓', notVerified: 'Not verified',
     filterActivity: 'Activity', filter30: 'Inactive 30+ days', filter60: 'Inactive 60+ days',
     filter90: 'Inactive 90+ days', filterNever: 'No tweets', filterMaxFollowers: 'Max followers',
     selectAll: 'All', selectNoBack: 'No follow back', selectNoBackFollowers: "Don't follow back",
@@ -52,6 +53,7 @@ const i18n = {
     youFollowBack: 'فالو‌بک دادم', youDontFollow: 'فالو‌بک ندادم',
     searchPlaceholder: 'جستجوی نام، هندل، بیو…',
     filterAll: 'همه', filterVerified: 'وریفای', filterUnverified: 'غیروریفای',
+    verifiedBlue: 'تیک آبی ✓', notVerified: 'بدون تیک',
     filterActivity: 'فعالیت', filter30: 'غیرفعال ۳۰+ روز', filter60: 'غیرفعال ۶۰+ روز',
     filter90: 'غیرفعال ۹۰+ روز', filterNever: 'بدون توییت', filterMaxFollowers: 'حداکثر فالوور',
     selectAll: 'همه', selectNoBack: 'فالو-نکرده‌ها', selectNoBackFollowers: 'بدون فالو‌بک',
@@ -104,10 +106,12 @@ const els = {
   accountLabel: $('accountLabel'), langToggle: $('langToggle'),
   scanBtn: $('scanBtn'), scanBtnLabel: $('scanBtnLabel'), scanStatus: $('scanStatus'),
   followbackSegment: $('followbackSegment'),
+  verifiedSegment: $('verifiedSegment'),
+  segCountVAll: $('segCountVAll'), segCountVYes: $('segCountVYes'), segCountVNo: $('segCountVNo'),
   segCountAll: $('segCountAll'), segCountBack: $('segCountBack'), segCountNoBack: $('segCountNoBack'),
   segLabelGood: $('segLabelGood'), segLabelBad: $('segLabelBad'),
   searchInput: $('searchInput'), filtersToggle: $('filtersToggle'), extraFilters: $('extraFilters'),
-  verifiedFilter: $('verifiedFilter'), inactiveFilter: $('inactiveFilter'), maxFollowersInput: $('maxFollowersInput'),
+  inactiveFilter: $('inactiveFilter'), maxFollowersInput: $('maxFollowersInput'),
   selectAllBox: $('selectAllBox'), selectNoBackBtn: $('selectNoBackBtn'), selectNoBackLabel: $('selectNoBackLabel'),
   selectedCount: $('selectedCount'), userList: $('userList'), emptyState: $('emptyState'), emptyStateText: $('emptyStateText'),
   unfollowSelectedBtn: $('unfollowSelectedBtn'), actionBtnLabel: $('actionBtnLabel'),
@@ -122,7 +126,7 @@ const els = {
   saveSettingsBtn: $('saveSettingsBtn'),
 };
 
-let currentUsers = [], selected = new Set(), pollTimer = null, mutualMode = 'all', mode = 'following';
+let currentUsers = [], selected = new Set(), pollTimer = null, mutualMode = 'all', verifiedMode = 'all', mode = 'following';
 const bg = msg => chrome.runtime.sendMessage(msg);
 async function getActiveXTab() { const t = await chrome.tabs.query({ url: ['https://x.com/*', 'https://twitter.com/*'] }); return t[0] || null; }
 
@@ -153,8 +157,9 @@ function updateLabels() {
 }
 
 function setMode(m) {
-  mode = m; mutualMode = 'all';
-  document.querySelectorAll('.seg-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  mode = m; mutualMode = 'all'; verifiedMode = 'all';
+  els.followbackSegment.querySelectorAll('.seg-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  els.verifiedSegment.querySelectorAll('.seg-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   selected.clear();
   document.body.classList.toggle('mode-following', m === 'following');
   document.body.classList.toggle('mode-followers', m === 'followers');
@@ -170,17 +175,25 @@ els.filtersToggle.addEventListener('click', () => els.extraFilters.classList.tog
 els.followbackSegment.addEventListener('click', e => {
   const b = e.target.closest('.seg-btn'); if (!b) return;
   mutualMode = b.dataset.mutual;
-  document.querySelectorAll('.seg-btn').forEach(x => x.classList.toggle('active', x === b));
+  els.followbackSegment.querySelectorAll('.seg-btn').forEach(x => x.classList.toggle('active', x === b));
+  renderList();
+});
+
+// Verified Segment
+els.verifiedSegment.addEventListener('click', e => {
+  const b = e.target.closest('.seg-btn'); if (!b) return;
+  verifiedMode = b.dataset.verified;
+  els.verifiedSegment.querySelectorAll('.seg-btn').forEach(x => x.classList.toggle('active', x === b));
   renderList();
 });
 
 function applyFilters() {
-  const q = els.searchInput.value.trim().toLowerCase(), v = els.verifiedFilter.value, ia = els.inactiveFilter.value;
+  const q = els.searchInput.value.trim().toLowerCase(), ia = els.inactiveFilter.value;
   const mf = els.maxFollowersInput.value ? +els.maxFollowersInput.value : null, now = Date.now();
   return currentUsers.filter(u => {
     if (q && !(u.name + ' ' + u.handle + ' ' + u.bio).toLowerCase().includes(q)) return false;
-    if (v === 'verified' && !u.verified) return false;
-    if (v === 'unverified' && u.verified) return false;
+    if (verifiedMode === 'verified' && !u.verified) return false;
+    if (verifiedMode === 'unverified' && u.verified) return false;
     if (mutualMode === 'hide' && u.mutual) return false;
     if (mutualMode === 'only' && !u.mutual) return false;
     if (ia !== 'all') {
@@ -229,12 +242,14 @@ function updSel() {
   const f = applyFilters();
   els.selectAllBox.checked = f.length > 0 && f.every(u => selected.has(u.handle));
   const total = currentUsers.length, back = currentUsers.filter(u => u.mutual).length;
+  const vYes = currentUsers.filter(u => u.verified).length;
   els.segCountAll.textContent = fmt(total); els.segCountBack.textContent = fmt(back); els.segCountNoBack.textContent = fmt(total - back);
+  els.segCountVAll.textContent = fmt(total); els.segCountVYes.textContent = fmt(vYes); els.segCountVNo.textContent = fmt(total - vYes);
 }
 
 els.selectAllBox.addEventListener('change', e => { const f = applyFilters(); if (e.target.checked) f.forEach(u => selected.add(u.handle)); else f.forEach(u => selected.delete(u.handle)); renderList(); });
 els.selectNoBackBtn.addEventListener('click', () => { const nb = currentUsers.filter(u => !u.mutual); const all = nb.length > 0 && nb.every(u => selected.has(u.handle)); if (all) nb.forEach(u => selected.delete(u.handle)); else nb.forEach(u => selected.add(u.handle)); renderList(); });
-[els.searchInput, els.verifiedFilter, els.inactiveFilter, els.maxFollowersInput].forEach(el => { el.addEventListener('input', renderList); el.addEventListener('change', renderList); });
+[els.searchInput, els.inactiveFilter, els.maxFollowersInput].forEach(el => { el.addEventListener('input', renderList); el.addEventListener('change', renderList); });
 
 // Scan
 els.scanBtn.addEventListener('click', async () => {

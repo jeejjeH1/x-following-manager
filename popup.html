@@ -83,6 +83,22 @@
         </button>
       </div>
 
+      <!-- SEGMENTED — VERIFIED -->
+      <div class="seg" id="verifiedSegment">
+        <button class="seg-btn active" data-verified="all">
+          <span data-i18n="all">All</span>
+          <span class="seg-count" id="segCountVAll">0</span>
+        </button>
+        <button class="seg-btn" data-verified="verified">
+          <span data-i18n="verifiedBlue">Verified ✓</span>
+          <span class="seg-count" id="segCountVYes">0</span>
+        </button>
+        <button class="seg-btn" data-verified="unverified">
+          <span data-i18n="notVerified">Not verified</span>
+          <span class="seg-count" id="segCountVNo">0</span>
+        </button>
+      </div>
+
       <!-- SEARCH -->
       <div class="search-wrap">
         <input id="searchInput" type="text" class="search-input" data-i18n-placeholder="searchPlaceholder"/>
@@ -91,11 +107,6 @@
 
       <div id="extraFilters" class="filters-panel">
         <div class="filters-row">
-          <select id="verifiedFilter">
-            <option value="all" data-i18n="filterAll">All</option>
-            <option value="verified" data-i18n="filterVerified">Verified</option>
-            <option value="unverified" data-i18n="filterUnverified">Not verified</option>
-          </select>
           <select id="inactiveFilter">
             <option value="all" data-i18n="filterActivity">Activity</option>
             <option value="30" data-i18n="filter30">Inactive 30+ days</option>

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Following Manager for X",
   "short_name": "Following Manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "See who follows you back on X, filter your following list, and bulk-unfollow safely with rate-limited pacing.",
   "author": "Your Name or Studio",
   "permissions": ["storage", "tabs", "alarms"],
