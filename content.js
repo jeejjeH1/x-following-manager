@@ -51,7 +51,7 @@
       handle: u.screen_name,
       name: u.name,
       bio: u.description || '',
-      verified: !!(u.verified || u.is_blue_verified),
+      verified: !!(u.verified || u.is_blue_verified || u.ext_is_blue_verified || u.verified_type),
       mutual: isFollowers ? !!u.following : !!u.followed_by,
       followersCount: typeof u.followers_count === 'number' ? u.followers_count : null,
       followingCount: typeof u.friends_count === 'number' ? u.friends_count : null,
@@ -123,7 +123,7 @@
     const allText = cell.innerText || '';
     const lines = allText.split('\n').map((s) => s.trim()).filter(Boolean);
     const name = lines[0] || handle;
-    const verified = !!cell.querySelector('svg[aria-label="Verified account"], [data-testid="icon-verified"]');
+    const verified = !!cell.querySelector('svg[aria-label="Verified account"], [data-testid="icon-verified"], [data-testid="icon-verified-gold"], [data-testid="icon-verified-government"]');
     const mutual = /Follows you/i.test(allText);
     const handleLineIdx = lines.findIndex((l) => l.replace('@', '') === handle);
     let bio = '';
