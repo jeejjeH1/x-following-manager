@@ -51,7 +51,7 @@
       handle: u.screen_name,
       name: u.name,
       bio: u.description || '',
-      verified: !!(u.is_blue_verified || u.ext_is_blue_verified || u.verified_type === 'blue'),
+      verified: !!(u.verified || u.is_blue_verified || u.ext_is_blue_verified || (u.verified_type && u.verified_type !== 'none')),
       mutual: isFollowers ? !!u.following : !!u.followed_by,
       followersCount: typeof u.followers_count === 'number' ? u.followers_count : null,
       followingCount: typeof u.friends_count === 'number' ? u.friends_count : null,
