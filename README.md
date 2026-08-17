@@ -1,50 +1,88 @@
 # X Following Manager
 
-اکستنشن کروم برای فیلتر کردن لیست دنبال‌شونده‌ها در X/Twitter و آنفالو دسته‌جمعی امن.
+A Chrome extension to scan, filter, and bulk unfollow accounts on X/Twitter — with API-first approach and built-in safety controls.
 
-## نصب (حالت Developer / Unpacked)
+## Features
 
-1. آدرس `chrome://extensions` را در کروم باز کنید.
-2. گزینه‌ی **Developer mode** را (بالا-راست) روشن کنید.
-3. روی **Load unpacked** بزنید و پوشه‌ی `x-following-manager` را انتخاب کنید.
-4. آیکون اکستنشن را به نوار ابزار پین کنید.
+- **API-first scraping** — uses X's internal API (`friends/list.json`, `followers/list.json`) for fast, reliable data collection
+- **Follower management** — scan and remove followers who don't follow you back
+- **Smart filtering** — search by name/handle/bio, filter by verified status, activity, follower count
+- **Follow-back detection** — instantly see who follows you back and who doesn't
+- **Batch unfollow/remove** — with random delays, daily caps, and batch pauses to avoid rate limits
+- **Mutual follow protection** — skips accounts that follow you back (toggle on/off)
+- **Background queue** — works even when the popup is closed (keeps an x.com tab open)
+- **Bilingual** — English and Persian (Farsi) with one-click language switch
+- **Dark theme** — yellow & grey design
 
-## استفاده
+## Install (Developer / Unpacked Mode)
 
-1. در کروم به آدرس `https://x.com/YOUR_HANDLE/following` بروید (باید لاگین باشید).
-2. روی آیکون اکستنشن کلیک کنید و دکمه‌ی **«اسکن لیست دنبال‌شونده‌ها»** را بزنید.
-   اکستنشن صفحه را به‌صورت خودکار اسکرول می‌کند و اطلاعات هر حساب (نام، بیو، وریفای، فالو متقابل) را جمع می‌کند.
-3. با جستجو و فیلترها (وریفای / فالو متقابل) لیست را محدود کنید.
-4. حساب‌های موردنظر را با چک‌باکس انتخاب کنید (یا «انتخاب همه فیلترشده»).
-5. روی **«آنفالو موارد انتخاب‌شده»** بزنید. کار در پس‌زمینه، با تاخیر تصادفی بین آنفالوها
-   و سقف روزانه (هر دو قابل تنظیم در تب «تنظیمات») ادامه پیدا می‌کند — حتی اگر پاپ‌آپ را ببندید.
-6. برای این‌که صف در پس‌زمینه پیش برود، **یک تب از x.com باز نگه دارید** (لازم نیست دقیقاً روی
-   صفحه Following باشد، ولی چون این ابزار همان دکمه‌های واقعی سایت را کلیک می‌کند، بهتر است
-   تب Following باز بماند).
+1. Open `chrome://extensions` in Chrome (or Quetta Browser on Android).
+2. Enable **Developer mode** (top-right toggle).
+3. Click **Load unpacked** and select the `x-following-manager` folder.
+4. Pin the extension icon to your toolbar.
 
-## چگونه کار می‌کند (و چرا امن‌تر است)
+## How to Use
 
-این نسخه از دو استراتژی به‌ترتیب استفاده می‌کند:
+### Unfollow Following
+1. Navigate to `https://x.com/YOUR_HANDLE/following` (must be logged in).
+2. Click the extension icon and press **Scan following list**.
+3. Use the segmented filter to show: All / Follow back / No follow back.
+4. Select accounts to unfollow using checkboxes (or use "No follow back" quick select).
+5. Click **Unfollow selected** and confirm.
 
-1. **روش API (اول امتحان می‌شود):** مستقیماً همان اندپوینت‌های داخلی که خودِ سایت x.com
-   هنگام لود لیست فالوینگ/آنفالو کردن صدا می‌زند را فراخوانی می‌کند (`friends/list.json`،
-   `friendships/destroy.json`)، با همان کوکی CSRF نشست شما (`ct0`) و همان بیرر توکن عمومیِ
-   کلاینت وب که در هر بار لود صفحه به مرورگر همه‌کاربران ارسال می‌شود. این یعنی هیچ رمز عبور
-   یا OAuth جدایی رد و بدل نمی‌شود؛ فقط از همان نشست لاگین‌شده‌ی خودتان استفاده می‌شود.
-   این روش سریع‌تر است و اطلاعاتی مثل تعداد فالوور، لوکیشن و تاریخ آخرین توییت را هم می‌دهد.
-2. **روش DOM (fallback خودکار):** اگر روش API به هر دلیلی (تغییر ساختار خصوصی X، محدودیت
-   موقت و…) جواب نداد، اکستنشن خودکار به کلیک‌کردن روی همان دکمه‌های Unfollow واقعی صفحه
-   برمی‌گردد — دقیقاً مثل قبل.
+### Remove Followers
+1. Navigate to `https://x.com/YOUR_HANDLE/followers`.
+2. Switch the mode to **Followers** at the top.
+3. Click **Scan followers list**.
+4. Filter by "You don't follow" and select accounts.
+5. Click **Remove selected followers**.
 
-بین هر آنفالو یک تاخیر تصادفی (پیش‌فرض ۵ تا ۱۲ ثانیه) قرار می‌گیرد و یک سقف روزانه اعمال
-می‌شود تا رفتار شبیه بات به نظر نرسد و ریسک محدودیت حساب کم شود. گزینه «محافظت از فالوهای
-متقابل» به‌صورت پیش‌فرض روشن است.
+## How It Works
 
-## محدودیت‌ها
+The extension uses X's internal API endpoints — the same ones the website calls when you load your Following/Followers page:
 
-- بیرر توکن عمومی که در `content.js` استفاده شده ممکن است در آینده توسط X عوض شود؛ در آن
-  صورت روش API خودکار fallback می‌کند به روش DOM (کندتر ولی همچنان کار می‌کند).
-- چون توییتر/X ساختار صفحه‌اش را گاه‌به‌گاه تغییر می‌دهد، ممکن است بعضی selectorهای DOM هم
-  با آپدیت‌های آینده‌ی سایت نیاز به به‌روزرسانی داشته باشند.
-- استفاده از این نوع ابزار، مثل هر اتوماسیون روی X، طبق قوانین پلتفرم مسئولیتش با کاربر است؛
-  سرعت را پایین نگه دارید (پیش‌فرض‌ها را دست‌نخورده رها کنید مگر لازم باشد).
+| Endpoint | Purpose |
+|---|---|
+| `GET /1.1/friends/list.json` | Scrape following list |
+| `GET /1.1/followers/list.json` | Scrape followers list |
+| `POST /1.1/friendships/destroy.json` | Unfollow a user |
+| `POST /1.1/friendships/remove.json` | Remove a follower |
+| `POST /1.1/blocks/create.json` | Block (fallback for remove) |
+| `POST /1.1/blocks/destroy.json` | Unblock (fallback) |
+
+Uses your existing session cookies (`ct0` CSRF token + bearer token) — no passwords or OAuth required.
+
+## Safety Features
+
+- **Random delays** between actions (default 5–12 seconds)
+- **Daily cap** to limit actions per day (default 100)
+- **Batch pauses** — takes a break every N actions
+- **Mutual follow protection** — enabled by default to avoid unfollowing people who support you
+
+All settings are configurable in the Settings tab.
+
+## Settings
+
+| Setting | Default | Description |
+|---|---|---|
+| Min delay | 5s | Minimum wait between actions |
+| Max delay | 7s | Maximum wait between actions |
+| Daily limit | 100 | Max actions per day |
+| Batch size | 40 | Actions before a longer pause |
+| Batch pause | 15 min | Rest duration between batches |
+| Protect mutuals | On | Skip mutual follows |
+
+## Tech Stack
+
+- Chrome Extension Manifest V3
+- Pure vanilla JS (no frameworks, no dependencies)
+- X internal REST API
+- Service Worker (background.js) for queue processing
+
+## Disclaimer
+
+Use this tool responsibly. Automated actions on X may violate their Terms of Service. Keep speeds low and use at your own risk.
+
+## License
+
+MIT
