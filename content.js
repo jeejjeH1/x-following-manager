@@ -79,6 +79,27 @@
       if (!list.length) break;
       await sleep(350 + Math.random() * 350);
     }
+
+    // Enrich verified status via friendships/lookup.json (batch of 100)
+    for (let i = 0; i < users.length; i += 100) {
+      const batch = users.slice(i, i + 100);
+      const handles = batch.map(u => u.handle).join(',');
+      try {
+        const lookups = await apiFetch('/friendships/lookup.json', {
+          params: { screen_name: handles },
+        });
+        for (const lu of lookups) {
+          const target = users.find(u => u.handle === lu.screen_name);
+          if (target) {
+            target.verified = !!(lu.verified || lu.is_blue_verified || lu.ext_is_blue_verified || (lu.verified_type && lu.verified_type !== 'none'));
+          }
+        }
+        if (i + 100 < users.length) await sleep(500 + Math.random() * 500);
+      } catch (err) {
+        // lookup failed — keep initial verified values
+      }
+    }
+
     return users;
   }
 
